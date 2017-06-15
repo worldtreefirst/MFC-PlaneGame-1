@@ -2,7 +2,6 @@
 // ChildView.h : CChildView 类的接口
 //
 
-
 #pragma once
 #pragma comment(lib, "winmm.lib")
 #define NUM_BLOOD 3
@@ -30,7 +29,11 @@ public:
 	public:
 		CRect m_itemPos;
 		CImage m_item;
+		CRect m_explosionPos;
+		CImage m_explosion;
+		CRect dead_pos;
 		bool is_visible;
+		bool is_dead;
 	};
 
 	Item bg;
@@ -80,3 +83,5 @@ public:
 	void judge_get();
 	void judge_addice();
 };
+
+

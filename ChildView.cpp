@@ -5,32 +5,12 @@
 #include "stdafx.h"
 #include "My.h"
 #include "ChildView.h"
+#include "define.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-#define TIMER_PAINT 1
-#define TIMER_SHOOT 2
-
-#define NUM_PLANE 6
-#define NUM_BULLET 5
-#define NUM_BULLET_MAX 50
-#define NUM_LIFE 100
-
-#define SCR_WIDTH 900
-#define SCR_HEIGHT 600
-#define HERO_WIDTH 100
-#define HERO_HEIGHT 100
-#define PLANE_WIDTH 80
-#define PLANE_HEIGHT 80
-#define BULLET_WIDTH 20
-#define BULLET_HEIGHT 20
-#define ICE_WIDTH 15
-#define ICE_HEIGHT 25
-#define BLOOD_WIDTH 30
-#define BLOOD_HEIGHT 30
-#define LENGTH_PACE 10
 
 #define MUSIC
 
@@ -107,13 +87,18 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 
 	for (int i = 0; i < NUM_PLANE; i++) {
 		num_bullet = NUM_BULLET;
-		if (i % 3 == 0)
+		if (i % 3 == 0) {
 			enemy[i].player.m_item.Load(_T("res/ep_1.png"));
+			enemy[i].player.m_explosion.Load(_T("res/explosion.png"));
+		}
+			
 		else if (i % 3 == 1) {
 			enemy[i].player.m_item.Load(_T("res/ep_2.png"));
+			enemy[i].player.m_explosion.Load(_T("res/explosion.png"));
 		}
 		else {
 			enemy[i].player.m_item.Load(_T("res/ep_3.png"));
+			enemy[i].player.m_explosion.Load(_T("res/explosion.png"));
 		}
 		TransparentPNG(&enemy[i].player.m_item);
 		while (num_bullet--)
@@ -121,6 +106,7 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 		for (iter = enemy[i].bullet.begin(), iter_no = 0; iter != enemy[i].bullet.end(); iter++, iter_no++) {
 			enemy[i].bullet[iter_no].m_item.Load(_T("res/e_b.png"));
 			TransparentPNG(&enemy[i].bullet[iter_no].m_item);
+			TransparentPNG(&enemy[i].bullet[iter_no].m_explosion);
 		}
 	}
 
@@ -164,6 +150,17 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 		enemy[i].player.m_itemPos.right = enemy[i].player.m_itemPos.left + PLANE_WIDTH;
 		enemy[i].player.m_itemPos.top = rand_pos(-600, 0);
 		enemy[i].player.m_itemPos.bottom = enemy[i].player.m_itemPos.top + PLANE_HEIGHT;
+
+		enemy[i].player.m_explosionPos.left = enemy[i].player.m_itemPos.left;
+		enemy[i].player.m_explosionPos.right = enemy[i].player.m_itemPos.right;
+		enemy[i].player.m_explosionPos.top = enemy[i].player.m_itemPos.top;
+		enemy[i].player.m_explosionPos.bottom = enemy[i].player.m_itemPos.bottom;
+
+		enemy[i].player.dead_pos.left = enemy[i].player.m_itemPos.left;
+		enemy[i].player.dead_pos.right = enemy[i].player.m_itemPos.right;
+		enemy[i].player.dead_pos.top = enemy[i].player.m_itemPos.top;
+		enemy[i].player.dead_pos.bottom = enemy[i].player.m_itemPos.bottom;
+
 		
 		for (int j = 0; j < NUM_BULLET; j++) {
 			enemy[i].bullet[j].m_itemPos.left = enemy[i].player.m_itemPos.left + 30;
@@ -173,6 +170,8 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 			enemy[i].bullet[j].is_visible = false;
 		}
 		enemy[i].player.is_visible = true;
+		enemy[i].player.is_dead = false;
+		
 	}
 
 	for (iter = hero.bullet.begin(), iter_no = 0; iter != hero.bullet.end(); iter++, iter_no++) {
@@ -235,6 +234,10 @@ void CChildView::OnPaint()
 				if (enemy[i].bullet[iter_no].is_visible)
 					enemy[i].bullet[iter_no].m_item.Draw(m_cacheDC, enemy[i].bullet[iter_no].m_itemPos);
 			}
+		}
+		if (enemy[i].player.is_dead) {
+			if (enemy[i].player.m_itemPos.bottom < enemy[i].player.dead_pos.bottom)
+			enemy[i].player.m_explosion.Draw(m_cacheDC, enemy[i].player.m_explosionPos);
 		}
 	}
 
@@ -384,6 +387,8 @@ void CChildView::OnTimer(UINT_PTR nIDEvent)
 		for (int i = 0; i < NUM_PLANE; i++) {
 			enemy[i].player.m_itemPos.top += 2;
 			enemy[i].player.m_itemPos.bottom += 2;
+			enemy[i].player.m_explosionPos.top += 2;
+			enemy[i].player.m_explosionPos.bottom += 2;
 
 			for (int j = 0; j < NUM_BULLET; j++) {
 				enemy[i].bullet[j].m_itemPos.left = enemy[i].player.m_itemPos.left + 30;
@@ -394,9 +399,14 @@ void CChildView::OnTimer(UINT_PTR nIDEvent)
 
 			if (enemy[i].player.m_itemPos.top > 600) {
 				enemy[i].player.m_itemPos.left = rand_pos(0, 800);
+				enemy[i].player.m_explosionPos.left = enemy[i].player.m_itemPos.left;
 				enemy[i].player.m_itemPos.right = enemy[i].player.m_itemPos.left + PLANE_WIDTH;
+				enemy[i].player.m_explosionPos.right = enemy[i].player.m_itemPos.right;
 				enemy[i].player.m_itemPos.top = rand_pos(-100, 0);
+				enemy[i].player.m_explosionPos.top = enemy[i].player.m_itemPos.top;
 				enemy[i].player.m_itemPos.bottom = enemy[i].player.m_itemPos.top + PLANE_HEIGHT;
+				enemy[i].player.m_explosionPos.bottom = enemy[i].player.m_itemPos.bottom;
+
 				for (int j = 0; j < NUM_BULLET; j++) {
 					enemy[i].bullet[j].m_itemPos.left = enemy[i].player.m_itemPos.left + 30;
 					enemy[i].bullet[j].m_itemPos.right = enemy[i].bullet[j].m_itemPos.left + BULLET_WIDTH;
@@ -405,6 +415,7 @@ void CChildView::OnTimer(UINT_PTR nIDEvent)
 					enemy[i].bullet[j].is_visible = true;
 				}
 				enemy[i].player.is_visible = true;
+				enemy[i].player.is_dead = false;
 			}
 		}
 
@@ -463,6 +474,10 @@ void CChildView::judge_hit()
 						&& hero.bullet[iter_no].m_itemPos.right < enemy[i].player.m_itemPos.right
 						&& hero.bullet[iter_no].m_itemPos.top <= enemy[i].player.m_itemPos.bottom) {
 						enemy[i].player.is_visible = false;
+						enemy[i].player.is_dead = true;
+						enemy[i].player.dead_pos = enemy[i].player.m_itemPos;
+						enemy[i].player.dead_pos.bottom = enemy[i].player.m_itemPos.bottom + 100;
+						enemy[i].player.dead_pos.top = enemy[i].player.m_itemPos.top + 100;
 						hero.bullet[iter_no].is_visible = false;
 						mciSendString(_T("play res/hit.wav"), 0, 0, NULL);
 						score += 5;
